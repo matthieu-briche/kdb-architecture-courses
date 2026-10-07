@@ -1,6 +1,4 @@
-﻿# kdb-realtime-tick-architecture
-
-# kdb+/q Tick Data Analytics
+﻿# kdb+/q Tick Data Analytics
 
 Real-time market data capture and analytics platform built in **kdb+/q**, following the standard kdb+ tick architecture: feed handler → tickerplant → real-time database → historical database. Built as the capstone project of the KX kdb+/q developer curriculum.
 
