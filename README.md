@@ -1,1 +1,1 @@
-﻿# kdb-architecture-courses
+﻿# kdb-realtime-tick-architecture
