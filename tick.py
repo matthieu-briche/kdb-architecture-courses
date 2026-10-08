@@ -56,16 +56,18 @@ RTE_APIS = {
 }
 
 # Historical APIs (q), filtering on date first so only the needed partitions are read.
+# Raw columns are selected from the partitioned tables first and aggregated in memory:
+# KDB-X does not implement every computed query directly on partitioned tables ('nyi).
 HDB_APIS = {
     "hdb_count": """{[s;n] exec sum c from
         select c:count i by date from trade where date within (.z.d-n;.z.d-1), sym=s}""",
     # daily traded volume, VWAP and realised volatility of the 1-minute mid
     "daily_stats": """{[s;n]
         d: (.z.d-n;.z.d-1);
-        v: select trades:count i, volume:sum sz, vwap:sz wavg px
-             by date from trade where date within d, sym=s;
-        m: select mid:last 0.5*bid+ask by date, minute:1 xbar time.minute
-             from quote where date within d, sym=s;
+        tr: select date, sz, px from trade where date within d, sym=s;
+        qt: select date, time, bid, ask from quote where date within d, sym=s;
+        v: select trades:count i, volume:sum sz, vwap:sz wavg px by date from tr;
+        m: select mid:last 0.5*bid+ask by date, minute:1 xbar time.minute from qt;
         v lj select rvol:sqrt[390]*dev 1_deltas log mid by date from m}""",
 }
 
@@ -113,7 +115,11 @@ def main():
         log_directory=str(LOG_PATH),
         database=str(DB_PATH),
     )
-    basic.start()
+    try:
+        basic.start()
+    except kx.QError as err:
+        sys.exit(f"Could not start the tickerplant ({err}).\nIf the log mentions pykx.q, run once:\n"
+                 '  python -c "import pykx; pykx.install_into_QHOME()"')
 
     chained = kx.tick.TICK(port=PORTS["chained_tp"], chained=True)
     chained.start({"tickerplant": f"localhost:{PORTS['tickerplant']}"})
