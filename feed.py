@@ -45,7 +45,12 @@ def main():
     rng = np.random.default_rng(args.seed)
     print(f"Feed handler -> tickerplant :{PORTS['tickerplant']}  (speed x{args.speed:g})")
 
-    with kx.SyncQConnection(port=PORTS["tickerplant"], no_ctx=True) as tp:
+    try:
+        conn = kx.SyncQConnection(port=PORTS["tickerplant"], no_ctx=True)
+    except kx.QError:
+        raise SystemExit(f"No tickerplant on port {PORTS['tickerplant']}: start `python tick.py` "
+                         "first and wait for 'Architecture running'.")
+    with conn as tp:
         session_no = 0
         while True:
             session_no += 1
