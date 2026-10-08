@@ -14,3 +14,7 @@ venv/
 # KDB+/q log & swap files
 *.tmp
 *.log
+
+# generated data
+database/
+logs/
