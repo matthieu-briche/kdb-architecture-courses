@@ -1,12 +1,15 @@
 """Feed handler: replays simulated Hawkes sessions into the tickerplant in accelerated time.
 
 Every --interval seconds of wall-clock time, publishes all events whose simulated
-time has been reached, as one `.u.upd` call per table. The tickerplant stamps the
-`time` column on arrival. When a session ends, a new one starts.
+time has been reached, as one `.u.upd` call per table. Each row carries its own
+`time` (wall-clock time of the event in the accelerated replay), so the tickerplant
+keeps it and as-of joins see the true event order inside a batch. When a session
+ends, a new one starts.
 
     python feed.py --speed 10
 """
 import argparse
+import datetime as dt
 import time
 
 import numpy as np
@@ -16,9 +19,13 @@ from config import PORTS, QUOTE_COLUMNS, SESSION_SECONDS, TRADE_COLUMNS
 from hawkes import CODES, decode, simulate_session
 
 
-def batch(cols, lo, hi, names):
-    """Columns of rows [lo, hi) as a list of kdb+ vectors, in schema order."""
-    out = []
+def batch(cols, lo, hi, names, origin_ns, speed):
+    """Rows [lo, hi) as a list of kdb+ vectors: time, then the schema columns.
+
+    origin_ns is the wall-clock time of the session start, in ns since midnight.
+    """
+    ns = origin_ns + np.round(1e9 * cols["t"][lo:hi] / speed).astype("int64")
+    out = [kx.toq(ns.astype("timedelta64[ns]"))]
     for name in names:
         values = cols[name][lo:hi]
         out.append(kx.toq(decode(name, values), kx.SymbolVector)
@@ -46,6 +53,9 @@ def main():
             q, t = session.quotes, session.trades
             iq = it = 0
             start = time.monotonic()
+            wall = dt.datetime.now()
+            midnight = wall.replace(hour=0, minute=0, second=0, microsecond=0)
+            origin_ns = (wall - midnight) // dt.timedelta(microseconds=1) * 1000
             print(f"session {session_no}: {q['t'].size:,} quotes, {t['t'].size:,} trades")
             while iq < q["t"].size or it < t["t"].size:
                 time.sleep(args.interval)
@@ -53,10 +63,10 @@ def main():
                 jq = int(np.searchsorted(q["t"], now, side="right"))
                 jt = int(np.searchsorted(t["t"], now, side="right"))
                 if jq > iq:
-                    tp(".u.upd", "quote", batch(q, iq, jq, QUOTE_COLUMNS))
+                    tp(".u.upd", "quote", batch(q, iq, jq, QUOTE_COLUMNS, origin_ns, args.speed))
                     iq = jq
                 if jt > it:
-                    tp(".u.upd", "trade", batch(t, it, jt, TRADE_COLUMNS))
+                    tp(".u.upd", "trade", batch(t, it, jt, TRADE_COLUMNS, origin_ns, args.speed))
                     it = jt
                 if now >= SESSION_SECONDS:
                     break
