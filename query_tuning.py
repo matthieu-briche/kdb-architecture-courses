@@ -27,7 +27,8 @@ def main():
     print("1. Filter order on a partitioned table (where date=..., sym=... vs reversed)")
     timed("date first, then sym", "select avg sz from trade where date=d, sym=`AAPL")
     timed("sym first, then date", "select avg sz from trade where sym=`AAPL, date=d")
-    timed("date and time range first", "select avg sz from trade where date=d, time>0D12:00:00, sym=`AAPL")
+    timed("date, sym, then time range", "select avg sz from trade where date=d, sym=`AAPL, time>0D12:00:00")
+    timed("date, time range, then sym", "select avg sz from trade where date=d, time>0D12:00:00, sym=`AAPL")
 
     print("\n2. Attributes on the sym column of one day held in memory")
     kx.q("t: select from quote where date=d")                       # sorted by sym, p# from .Q.dpft
@@ -38,12 +39,11 @@ def main():
     timed("grouped g#", "select from tg where sym=`TSLA", 50)
     timed("parted p#", "select from tp where sym=`TSLA", 50)
 
-    print("\n3. Sorted attribute on time for a range lookup")
-    kx.q("ts: select from t where sym=`AAPL")
-    kx.q("ts0: update `#time from ts")
+    print("\n3. Sorted attribute on time for a range lookup (one full day, sorted by time)")
+    kx.q("ts0: update `#time from `time xasc update `#sym from t")   # xasc sets s#, so drop it
     kx.q("ts1: update `s#time from ts0")
-    timed("no attribute", "select from ts0 where time within 0D12:00:00 0D12:05:00", 200)
-    timed("sorted s#", "select from ts1 where time within 0D12:00:00 0D12:05:00", 200)
+    timed("no attribute (linear scan)", "select from ts0 where time within 0D12:00:00 0D12:00:01", 200)
+    timed("sorted s# (binary search)", "select from ts1 where time within 0D12:00:00 0D12:00:01", 200)
 
 
 if __name__ == "__main__":
