@@ -82,6 +82,7 @@ Requires Python 3.10+ and a kdb+ licence for PyKX (the free personal edition wor
 
 ```bash
 pip install -r requirements.txt
+python -c "import pykx; pykx.install_into_QHOME()"   # once: lets the q processes load PyKX
 
 python create_database.py --days 10   # build the HDB in database/
 python tick.py                        # terminal 1: start all processes
