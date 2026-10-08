@@ -1,6 +1,8 @@
 """Query tuning benchmarks on the historical database.
 
-Measures, with q's own timer (`\\t:n`), how much a few classic choices matter:
+Measures, with q's own timer (`\\t:n`), how much a few classic choices matter.
+The repeat count grows until the total time is measurable (q's timer has 1 ms
+resolution), and each line shows how many rows the query returns.
   1. filter order on a date-partitioned table (date first vs sym first)
   2. attributes on an in-memory column: none vs grouped (g#) vs parted (p#)
   3. sorted attribute (s#) on a time column for range lookups
@@ -12,9 +14,15 @@ import pykx as kx
 from config import DB_PATH
 
 
-def timed(label, expr, repeat=20):
-    ms = kx.q("{system\"t:\",string[x],\" \",y}", repeat, kx.toq(expr, kx.CharVector)).py()
-    print(f"  {ms / repeat:8.3f} ms   {label}")
+def timed(label, expr, repeat=20, min_total_ms=100):
+    q_expr = kx.toq(expr, kx.CharVector)
+    while True:
+        ms = kx.q("{system\"t:\",string[x],\" \",y}", repeat, q_expr).py()
+        if ms >= min_total_ms or repeat >= 10**6:
+            break
+        repeat *= 10
+    rows = kx.q("{count value x}", q_expr).py()
+    print(f"  {1000 * ms / repeat:10.1f} us   {label}   ({rows:,} rows)")
     return ms / repeat
 
 
