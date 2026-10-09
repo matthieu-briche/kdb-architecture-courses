@@ -149,3 +149,9 @@ The architecture skeleton (PyKX `kx.tick` processes, feed handler, gateway) come
 ## Author
 
 **Matthieu Briche** · kdb+/q & Python · [LinkedIn](https://www.linkedin.com/in/matthieu-briche-aa69b441/)
+
+<p align="center">
+  <a href="https://github.com/matthieu-briche">
+    <img src="assets/logo.png" alt="Matthieu Briche" width="37">
+  </a>
+</p>
