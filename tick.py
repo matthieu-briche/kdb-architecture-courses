@@ -104,7 +104,8 @@ def check_user(username, password):
     return bool(username == 'analyst')
 
 
-def main():
+def start():
+    """Start every process; returns them in stop order (see `stop`)."""
     if not DB_PATH.exists():
         sys.exit("No historical database found: run `python create_database.py` first.")
     LOG_PATH.mkdir(exist_ok=True)
@@ -141,7 +142,19 @@ def main():
         connection_validator=check_user,
     )
     gateway.start()
+    return gateway, rte, chained, basic
 
+
+def stop(processes):
+    for process in processes:
+        try:
+            process.stop()
+        except Exception as err:  # keep stopping the others
+            print(f"could not stop {process}: {err}")
+
+
+def main():
+    processes = start()
     print("\nArchitecture running:",
           ", ".join(f"{k} :{v}" for k, v in PORTS.items()),
           "\nStart the feed with `python feed.py`. Ctrl-C to stop.")
@@ -151,11 +164,7 @@ def main():
     except KeyboardInterrupt:
         print("\nstopping ...")
     finally:
-        for process in (gateway, rte, chained, basic):
-            try:
-                process.stop()
-            except Exception as err:  # keep stopping the others
-                print(f"could not stop {process}: {err}")
+        stop(processes)
 
 
 if __name__ == "__main__":
