@@ -41,7 +41,7 @@ $$\lambda(t) = \mu + \sum_{t_i<t} \alpha\, e^{-\beta (t-t_i)}$$
 
 with a branching ratio $n=\alpha/\beta$ between 0.6 and 0.9 and a 20 ms memory ($1/\beta$). It is simulated through its cluster representation (immigrants, then generations of children), fully vectorised in NumPy. Simulated rates and Fano factors match the theory ($\mu/(1-n)$ and $1/(1-n)^2$). About 20 % of quote updates also print a trade at the prevailing bid or ask.
 
-The model and its statistical validation in pure q are in [kdb-hawkes-simulation-one-day](https://github.com/matthieu-briche/kdb-hawkes-simulation-one-day).
+The model and its statistical validation in pure q are in [kdb-hawkes-quote-simulator](https://github.com/matthieu-briche/kdb-hawkes-quote-simulator).
 
 ## Schemas
 
