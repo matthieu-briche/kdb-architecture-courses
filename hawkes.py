@@ -4,7 +4,7 @@ Event times follow an exponential Hawkes process simulated through its branching
 (cluster) representation: Poisson(mu*T) immigrants, then each event has
 Poisson(alpha/beta) children delayed by Exp(beta), generation after generation.
 Every event is a quote update; a fraction of them also prints a trade at the
-prevailing bid or ask. Same model as the kdb+/q project kdb-hawkes-simulation-one-day.
+prevailing bid or ask. Same model as the kdb+/q project kdb-hawkes-quote-simulator.
 
 `sym` and `exchange` are stored as integer codes into SYM_NAMES / EXCHANGES
 (large NumPy string arrays are slow, and can crash when PyKX is loaded).
