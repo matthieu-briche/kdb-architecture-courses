@@ -116,6 +116,22 @@ aj[`sym`time; select from trade where date=last date; select time, sym, bid, ask
 select spread_bps:avg 1e4*(ask-bid)%0.5*ask+bid by sym from quote where date=last date
 ```
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest -v -rs
+```
+
+- `tests/test_hawkes.py` (NumPy only, no licence): stationarity check, simulated rate vs $\mu/(1-n)$, Fano factor vs $1/(1-n)^2$, quote validity, trades printed at the prevailing bid or ask.
+- `tests/test_q_analytics.py` (needs a PyKX licence, skipped otherwise): the q RTE post-processor (aggregate values, one-second throttle) and the q query APIs (`aj` trade context, OHLC, VWAP, `daily_stats` on a small partitioned HDB), checked against hand-computed values.
+
+CI runs both on every push; the q tests run there once a licence is stored as the `KDB_LICENSE_B64` repository secret.
+
+## Sample run
+
+`python smoke_run.py --seconds 20` starts the whole architecture, streams for 20 s, queries the RDB and every gateway API, then stops everything. Its output is saved in `docs/sample_run.txt`.
+
 ## Query tuning
 
 `python query_tuning.py` times, with q's own `\t`, how much a few choices matter on this HDB:
@@ -134,7 +150,10 @@ select spread_bps:avg 1e4*(ask-bid)%0.5*ask+bid by sym from quote where date=las
 ├── tick.py              # tickerplant, RDB, HDB, chained TP, RTE (q), gateway
 ├── feed.py              # feed handler: accelerated replay into the tickerplant
 ├── query_tuning.py      # partition, attribute and filter-order benchmarks
-└── requirements.txt
+├── smoke_run.py         # end-to-end run, saved to docs/sample_run.txt
+├── tests/               # pytest: Hawkes generator, q RTE and query APIs
+├── requirements.txt
+└── requirements-dev.txt
 ```
 
 ## Origin
