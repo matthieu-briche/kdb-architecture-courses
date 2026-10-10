@@ -1,0 +1,21 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      # The q tests run only when a kdb+ licence is stored as a repository secret
+      # (base64 of kc.lic or k4.lic); otherwise they are reported as skipped.
+      - run: pytest -v -rs
+        env:
+          KDB_LICENSE_B64: ${{ secrets.KDB_LICENSE_B64 }}
+          KDB_K4LICENSE_B64: ${{ secrets.KDB_K4LICENSE_B64 }}
